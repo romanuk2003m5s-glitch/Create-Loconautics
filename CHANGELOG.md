@@ -84,6 +84,8 @@
 - Trackless cars coupled into a train cross portals with it, untested.
 - Bogeys still behind a portal keep turning after the train crosses, untested.
 - Holding Space while standing still approaches the station again.
+- With two analog controllers in a car, the one being driven from is used, not whichever is found first.
+- Cars behind the driver follow its steering, a car with its axle turned around no longer turns the other way.
 
 - Deployers lay track along the car on a turned train.
 ### Added

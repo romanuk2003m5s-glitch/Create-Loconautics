@@ -1094,8 +1094,21 @@ public final class SableTrainDriver {
         return analogControllerIn(sub);
     }
 
+    // with two controllers in one car the first one found was not always the one being driven from
     static AnalogControllerBlockEntity analogControllerIn(ServerSubLevel sub) {
-        return SubLevelBlocks.find(sub, AnalogControllerBlockEntity.class);
+        AnalogControllerBlockEntity scheduled = null;
+        for (AnalogControllerBlockEntity controller : SubLevelBlocks.findAll(sub, AnalogControllerBlockEntity.class)) {
+            if (controller.isRemoved()) {
+                continue;
+            }
+            if (controller.hasUser()) {
+                return controller;
+            }
+            if (scheduled == null && controller.isScheduleControlled()) {
+                scheduled = controller;
+            }
+        }
+        return scheduled != null ? scheduled : SubLevelBlocks.find(sub, AnalogControllerBlockEntity.class);
     }
 
 }

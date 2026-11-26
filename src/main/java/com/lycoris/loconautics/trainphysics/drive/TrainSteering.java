@@ -45,6 +45,14 @@ final class TrainSteering {
         }
         tagJunctions(train, car.subLevelId() + " mode=" + describeMode(train, input, front, leader, ahead));
 
+        // the controller sends a/d to every axle, so a car with its axle turned around steered the other way
+        SableTrain driver = leader != null ? leader : train;
+        AnalogControllerBlockEntity operated = SableTrainDriver.operatedControllerIn(driver);
+        if (operated != null) {
+            steerFromDriver(train, car, driver, operated, ahead);
+            return;
+        }
+
         if (front == null || input == 0) {
             boolean isLeader = leader != null && car.subLevelId().equals(leader.car().subLevelId());
             if (ahead != null && followAhead(train, ahead)) {
@@ -67,6 +75,31 @@ final class TrainSteering {
         train.setSteerIntent(target(front, input));
         clearFollow(car);
         applySteerTarget(car, train.steerIntent());
+    }
+
+    // only the drivers car reads a/d and left and right come from the controller facing like create, the rest follow
+    private static void steerFromDriver(SableTrain train, Car car, SableTrain driver,
+                                        AnalogControllerBlockEntity controller, SableTrain ahead) {
+        if (car.subLevelId().equals(driver.car().subLevelId())) {
+            Direction intent = target(controllerLook(driver), controller.getSteerInput());
+            SteerTrace.mode(car.subLevelId(), "driver at controller intent " + intent);
+            train.setSteerIntent(intent);
+            if (intent != null || ahead == null || !followAhead(train, ahead)) {
+                clearFollow(car);
+            }
+            applySteerTarget(car, intent);
+            return;
+        }
+        SteerTrace.mode(car.subLevelId(), "car follows driver intent " + driver.steerIntent());
+        if (ahead == null || !followAhead(train, ahead)) {
+            clearFollow(car);
+        }
+        applySteerTarget(car, driver.steerIntent());
+    }
+
+    private static Direction controllerLook(SableTrain driver) {
+        Vec3 look = SableTrainDriver.driverLook(driver);
+        return look == null || look.horizontalDistanceSqr() < 1.0e-9 ? null : Direction.getNearest(look.x, 0.0, look.z);
     }
 
     private static final java.util.Map<UUID, String> ISSUE274_MODE = new java.util.HashMap<>();
